@@ -3,36 +3,40 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shelfmark</title>
+<title>Gutenberg Mirror Search</title>
 <meta name="description" content="Search the Project Gutenberg collection and read straight from its public mirrors.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f3a2e'/%3E%3Cpath d='M10 6h12v21l-6-5-6 5z' fill='%23e8d9b5'/%3E%3C/svg%3E">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f7f4ec; --fg: #1d1c19; --muted: #6b665b; --line: #e2dccd; --card: #fffdf7;
-  --accent: #1f5c43; --accent-fg: #fff; --chip: #ece6d6;
+  --bg: #faf8f8; --fg: #2b2b2b; --muted: #4e4e4e; --faint: #b8b8b8; --line: #e5e5e5; --card: #ffffff;
+  --accent: #284b63; --accent-fg: #faf8f8; --sage: #84a59d; --chip: rgba(143, 159, 169, 0.15);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #15161a; --fg: #e9e6de; --muted: #9a958a; --line: #2a2b31; --card: #1c1d22;
-    --accent: #7fc8a3; --accent-fg: #10231a; --chip: #26272d;
+    --bg: #161618; --fg: #ebebec; --muted: #d4d4d4; --faint: #646464; --line: #393639; --card: #1d1d20;
+    --accent: #7b97aa; --accent-fg: #161618; --sage: #84a59d; --chip: rgba(143, 159, 169, 0.15);
   }
 }
 :root[data-theme="dark"] {
-  --bg: #15161a; --fg: #e9e6de; --muted: #9a958a; --line: #2a2b31; --card: #1c1d22;
-  --accent: #7fc8a3; --accent-fg: #10231a; --chip: #26272d;
+  --bg: #161618; --fg: #ebebec; --muted: #d4d4d4; --faint: #646464; --line: #393639; --card: #1d1d20;
+  --accent: #7b97aa; --accent-fg: #161618; --sage: #84a59d; --chip: rgba(143, 159, 169, 0.15);
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg);
-  font: 16px/1.5 Georgia, "Iowan Old Style", "Palatino Linotype", serif; }
+  font: 18px/1.5 "EB Garamond", Garamond, Georgia, serif; }
 .wrap { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
-header h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: .01em; }
-header p { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
+header h1 { font-size: 2.2rem; font-weight: 600; margin: 0 0 4px; }
+header .kicker { font-variant: small-caps; letter-spacing: .06em; color: var(--sage); font-weight: 600; margin: 0; }
+header p.lede { margin: 0 0 20px; text-align: justify; color: var(--muted); font-size: 15px; }
 .controls { display: flex; gap: 8px; flex-wrap: wrap; position: sticky; top: 0; padding: 10px 0;
   background: var(--bg); z-index: 2; }
 #q { flex: 1 1 280px; min-width: 0; font: inherit; font-size: 18px; padding: 10px 14px;
   border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); }
 #q:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-select { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--line);
+select { font: inherit; font-size: 16px; padding: 8px 10px; border: 1px solid var(--line);
   border-radius: 8px; background: var(--card); color: var(--fg); max-width: 100%; }
 #status { color: var(--muted); font-size: 14px; margin: 6px 0 14px; min-height: 21px; }
 ol { list-style: none; margin: 0; padding: 0; }
@@ -40,27 +44,29 @@ li.book { display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid var(-
 .cover { flex: 0 0 52px; height: 78px; border-radius: 3px; background: var(--chip); overflow: hidden; }
 .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .info { min-width: 0; flex: 1; }
-.title { font-size: 18px; font-weight: bold; margin: 0; overflow-wrap: anywhere; }
-.author { color: var(--muted); margin: 2px 0 6px; }
-.meta { font-size: 13px; color: var(--muted); margin-bottom: 8px; overflow-wrap: anywhere; }
+.title { font-size: 1.25rem; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.author { color: var(--muted); font-style: italic; margin: 2px 0 6px; }
+.meta { font-size: 15px; color: var(--faint); margin-bottom: 8px; overflow-wrap: anywhere; }
 .links { display: flex; gap: 6px; flex-wrap: wrap; }
-.links a { font: 13px/1 system-ui, sans-serif; padding: 7px 10px; border-radius: 6px; text-decoration: none;
+.links a { font-family: inherit; font-weight: 600; font-size: 15px; line-height: 1; padding: 7px 11px; border-radius: 6px; text-decoration: none;
   background: var(--chip); color: var(--fg); }
 .links a.primary { background: var(--accent); color: var(--accent-fg); }
+.links a:not(.primary) { color: var(--accent); }
 .links a:hover { filter: brightness(.95); }
-#more { display: none; margin: 18px auto 0; font: 14px system-ui, sans-serif; padding: 9px 16px;
+#more { display: none; margin: 18px auto 0; font-family: inherit; font-weight: 600; font-size: 16px; padding: 9px 16px;
   border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
-footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
-footer a { color: inherit; }
-mark { background: none; color: inherit; text-decoration: underline; text-decoration-color: var(--accent);
+footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 15px; color: var(--faint); text-align: justify; }
+footer a { color: var(--accent); font-weight: 600; text-decoration: none; }
+mark { background: none; color: inherit; text-decoration: underline; text-decoration-color: var(--sage);
   text-decoration-thickness: 2px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Shelfmark</h1>
-    <p>Search 78,000 public-domain books from the Project Gutenberg collection and read them from its public mirrors.</p>
+    <p class="kicker"><a href="https://td10.org" style="color:inherit;text-decoration:none">Tiny d10</a></p>
+    <h1>Gutenberg Mirror Search</h1>
+    <p class="lede">Search 78,000 public-domain books from the Project Gutenberg collection and read them from its public mirrors.</p>
   </header>
   <div class="controls">
     <input id="q" type="search" placeholder="Title, author, or subject…" autocomplete="off" autofocus>
@@ -71,7 +77,7 @@ mark { background: none; color: inherit; text-decoration: underline; text-decora
   <ol id="results"></ol>
   <button id="more">Show more</button>
   <footer>
-    Shelfmark is an independent search tool and isn't affiliated with Project Gutenberg. Books are served by the
+    An independent search tool from <a href="https://td10.org">Tiny d10</a>, not affiliated with Project Gutenberg. Books are served by the
     volunteer-run mirrors listed above. Full formats (EPUB, Kindle, HTML) are on the PGLAF mirrors; the others carry
     the original file folders.
   </footer>
@@ -111,7 +117,7 @@ function links(b) {
   const m = MIRRORS[$("mirror").value], c = `${m.base}/cache/epub/${b.id}/pg${b.id}`;
   if (m.full) return [
     ["Read", `${c}-images.html`, true], ["EPUB", `${c}-images-3.epub`], ["Kindle", `${c}-images-kf8.mobi`],
-    ["Plain text", `${c}.txt`], ["Files", `${m.base}/${folder(b.id)}`]];
+    ["Plain Text", `${c}.txt`], ["Files", `${m.base}/${folder(b.id)}`]];
   return [["Files", `${m.base}/${folder(b.id)}`, true]];
 }
 
