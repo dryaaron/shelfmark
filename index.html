@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shelfmark</title>
+<meta name="description" content="Search the Project Gutenberg collection and read straight from its public mirrors.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f3a2e'/%3E%3Cpath d='M10 6h12v21l-6-5-6 5z' fill='%23e8d9b5'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f7f4ec; --fg: #1d1c19; --muted: #6b665b; --line: #e2dccd; --card: #fffdf7;
+  --accent: #1f5c43; --accent-fg: #fff; --chip: #ece6d6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15161a; --fg: #e9e6de; --muted: #9a958a; --line: #2a2b31; --card: #1c1d22;
+    --accent: #7fc8a3; --accent-fg: #10231a; --chip: #26272d;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15161a; --fg: #e9e6de; --muted: #9a958a; --line: #2a2b31; --card: #1c1d22;
+  --accent: #7fc8a3; --accent-fg: #10231a; --chip: #26272d;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.5 Georgia, "Iowan Old Style", "Palatino Linotype", serif; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+header h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: .01em; }
+header p { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; position: sticky; top: 0; padding: 10px 0;
+  background: var(--bg); z-index: 2; }
+#q { flex: 1 1 280px; min-width: 0; font: inherit; font-size: 18px; padding: 10px 14px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); }
+#q:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+select { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--card); color: var(--fg); max-width: 100%; }
+#status { color: var(--muted); font-size: 14px; margin: 6px 0 14px; min-height: 21px; }
+ol { list-style: none; margin: 0; padding: 0; }
+li.book { display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
+.cover { flex: 0 0 52px; height: 78px; border-radius: 3px; background: var(--chip); overflow: hidden; }
+.cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.info { min-width: 0; flex: 1; }
+.title { font-size: 18px; font-weight: bold; margin: 0; overflow-wrap: anywhere; }
+.author { color: var(--muted); margin: 2px 0 6px; }
+.meta { font-size: 13px; color: var(--muted); margin-bottom: 8px; overflow-wrap: anywhere; }
+.links { display: flex; gap: 6px; flex-wrap: wrap; }
+.links a { font: 13px/1 system-ui, sans-serif; padding: 7px 10px; border-radius: 6px; text-decoration: none;
+  background: var(--chip); color: var(--fg); }
+.links a.primary { background: var(--accent); color: var(--accent-fg); }
+.links a:hover { filter: brightness(.95); }
+#more { display: none; margin: 18px auto 0; font: 14px system-ui, sans-serif; padding: 9px 16px;
+  border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
+footer a { color: inherit; }
+mark { background: none; color: inherit; text-decoration: underline; text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Shelfmark</h1>
+    <p>Search 78,000 public-domain books from the Project Gutenberg collection and read them from its public mirrors.</p>
+  </header>
+  <div class="controls">
+    <input id="q" type="search" placeholder="Title, author, or subject…" autocomplete="off" autofocus>
+    <select id="lang" aria-label="Language"><option value="">All languages</option></select>
+    <select id="mirror" aria-label="Mirror"></select>
+  </div>
+  <div id="status">Loading catalog…</div>
+  <ol id="results"></ol>
+  <button id="more">Show more</button>
+  <footer>
+    Shelfmark is an independent search tool and isn't affiliated with Project Gutenberg. Books are served by the
+    volunteer-run mirrors listed above. Full formats (EPUB, Kindle, HTML) are on the PGLAF mirrors; the others carry
+    the original file folders.
+  </footer>
+</div>
+<script>
+const MIRRORS = [
+  { name: "PGLAF (https, all formats)", base: "https://gutenberg.pglaf.org", full: true },
+  { name: "Aleph PGLAF (https, all formats)", base: "https://aleph.pglaf.org", full: true },
+  { name: "UC Berkeley OCF (https, folders)", base: "https://mirrors.ocf.berkeley.edu/gutenberg" },
+  { name: "Waterloo CSClub (https, folders)", base: "https://mirror.csclub.uwaterloo.ca/gutenberg" },
+  { name: "UK Mirror Service (https, folders)", base: "https://www.mirrorservice.org/sites/ftp.ibiblio.org/pub/docs/books/gutenberg" },
+  { name: "XMission (http, folders)", base: "http://mirrors.xmission.com/gutenberg" },
+];
+const LANGS = { en: "English", fr: "French", fi: "Finnish", de: "German", nl: "Dutch", it: "Italian", es: "Spanish",
+  pt: "Portuguese", hu: "Hungarian", zh: "Chinese", sv: "Swedish", da: "Danish", la: "Latin", eo: "Esperanto",
+  el: "Greek", ca: "Catalan", tl: "Tagalog", pl: "Polish", ja: "Japanese", no: "Norwegian", cy: "Welsh", ru: "Russian",
+  cs: "Czech", ga: "Irish", he: "Hebrew", is: "Icelandic", ro: "Romanian", af: "Afrikaans", ko: "Korean" };
+const PAGE = 50;
+const $ = id => document.getElementById(id);
+const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+let books = [], shown = 0, hits = [];
+const store = (k, v) => { try { v === undefined ? (v = localStorage.getItem(k)) : localStorage.setItem(k, v); } catch {} return v; };
+
+MIRRORS.forEach((m, i) => $("mirror").add(new Option(m.name, i)));
+$("mirror").value = store("mirror") || 0;
+if (!MIRRORS[$("mirror").value]) $("mirror").value = 0;
+
+function folder(id) {
+  const s = String(id);
+  const dirs = s.length === 1 ? "0" : s.slice(0, -1).split("").join("/");
+  return `${dirs}/${s}/`;
+}
+
+function links(b) {
+  const m = MIRRORS[$("mirror").value], c = `${m.base}/cache/epub/${b.id}/pg${b.id}`;
+  if (m.full) return [
+    ["Read", `${c}-images.html`, true], ["EPUB", `${c}-images-3.epub`], ["Kindle", `${c}-images-kf8.mobi`],
+    ["Plain text", `${c}.txt`], ["Files", `${m.base}/${folder(b.id)}`]];
+  return [["Files", `${m.base}/${folder(b.id)}`, true]];
+}
+
+function hl(text, terms) {
+  let out = esc(text);
+  for (const t of terms) {
+    if (t.length < 2) continue;
+    // highlight only when the folded text matches at the same offsets (plain ASCII spans)
+    const re = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    out = out.replace(/(^|>)([^<]*)/g, (_, a, seg) => a + seg.replace(re, "<mark>$1</mark>"));
+  }
+  return out;
+}
+
+function render(reset) {
+  if (reset) { $("results").innerHTML = ""; shown = 0; window.scrollTo(0, 0); }
+  const terms = fold($("q").value).split(/\s+/).filter(Boolean);
+  const m = MIRRORS[$("mirror").value];
+  const frag = document.createDocumentFragment();
+  for (const b of hits.slice(shown, shown + PAGE)) {
+    const li = document.createElement("li");
+    li.className = "book";
+    const subj = b.subjects.slice(0, 4).join(" · ");
+    li.innerHTML = `
+      <div class="cover">${m.full ? `<img loading="lazy" alt="" src="${m.base}/cache/epub/${b.id}/pg${b.id}.cover.small.jpg" onerror="this.remove()">` : ""}</div>
+      <div class="info">
+        <p class="title">${hl(b.title, terms)}</p>
+        <p class="author">${b.author ? hl(b.author, terms) : "Anonymous"}</p>
+        <div class="meta">${LANGS[b.lang] || b.lang} · #${b.id}${subj ? " · " + hl(subj, terms) : ""}</div>
+        <div class="links">${links(b).map(([t, u, p]) => `<a${p ? ' class="primary"' : ""} href="${u}" target="_blank" rel="noopener">${t}</a>`).join("")}</div>
+      </div>`;
+    frag.append(li);
+  }
+  $("results").append(frag);
+  shown = Math.min(shown + PAGE, hits.length);
+  $("more").style.display = shown < hits.length ? "block" : "none";
+}
+
+// whole word = top, word start = top-2, anywhere inside = top-4
+const isW = c => c === undefined || /[a-z0-9]/.test(c) === false;
+function hit(s, t, top) {
+  const i = s.indexOf(t);
+  if (i < 0) return 0;
+  let best = 0;
+  for (let j = i; j >= 0; j = s.indexOf(t, j + 1)) {
+    const start = isW(s[j - 1]), end = isW(s[j + t.length]);
+    best = Math.max(best, start && end ? top : start ? top - 2 : top - 4);
+    if (best === top) break;
+  }
+  return best;
+}
+
+function search() {
+  const q = fold($("q").value.trim()), lang = $("lang").value;
+  const idq = /^#?(\d+)$/.exec(q);
+  const terms = q.split(/\s+/).filter(Boolean);
+  const scored = [];
+  for (const b of books) {
+    if (lang && !b.lang.split("; ").includes(lang)) continue;
+    if (idq && b.id === +idq[1]) { scored.push([1e9, b]); continue; }
+    if (!terms.length) { scored.push([0, b]); continue; }
+    let score = 0, ok = true;
+    for (const t of terms) {
+      const s = Math.max(hit(b.ft, t, 6), hit(b.fa, t, 7), b.fs.includes(t) ? 1 : 0);
+      if (!s) { ok = false; break; }
+      score += s;
+    }
+    if (!ok) continue;
+    if (b.ft === q) score += 20;
+    else if (b.ft.startsWith(q)) score += 8;
+    scored.push([score, b]);
+  }
+  scored.sort((a, b) => b[0] - a[0] || a[1].id - b[1].id);
+  hits = scored.map(x => x[1]);
+  const n = hits.length.toLocaleString();
+  $("status").textContent = terms.length || lang ? `${n} book${hits.length === 1 ? "" : "s"}` : `${n} books — start typing to search`;
+  render(true);
+  const p = new URLSearchParams();
+  if ($("q").value.trim()) p.set("q", $("q").value.trim());
+  if (lang) p.set("lang", lang);
+  history.replaceState(null, "", p.toString() ? "?" + p : location.pathname);
+}
+
+let timer;
+$("q").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(search, 120); });
+$("lang").addEventListener("change", search);
+$("mirror").addEventListener("change", () => { store("mirror", $("mirror").value); const n = shown; render(true); while (shown < n) render(); });
+$("more").addEventListener("click", () => render());
+
+fetch("catalog.json").then(r => r.json()).then(d => {
+  books = d.books.map(([id, title, au, lang, sj, sh]) => {
+    const author = au.map(i => d.authors[i]).join("; ");
+    const subjects = sj.map(i => d.subjects[i]);
+    const shelves = sh.map(i => d.shelves[i]);
+    return { id, title, author, lang, subjects,
+      ft: fold(title), fa: fold(author), fs: fold(subjects.join(" ") + " " + shelves.join(" ")) };
+  });
+  const counts = {};
+  for (const b of books) for (const l of b.lang.split("; ")) counts[l] = (counts[l] || 0) + 1;
+  Object.entries(counts).sort((a, b) => b[1] - a[1]).filter(([, n]) => n >= 20)
+    .forEach(([l, n]) => $("lang").add(new Option(`${LANGS[l] || l} (${n.toLocaleString()})`, l)));
+  const p = new URLSearchParams(location.search);
+  $("q").value = p.get("q") || "";
+  $("lang").value = p.get("lang") || "";
+  search();
+}).catch(() => { $("status").textContent = "Couldn't load the catalog. Try reloading."; });
+</script>
+</body>
+</html>
