@@ -1,2 +1,3 @@
 pg_catalog.csv
 __pycache__/
+worker/.wrangler/
