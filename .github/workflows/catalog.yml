@@ -13,10 +13,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Fetch catalog
         run: |
-          for src in https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv \
-                     https://gutenberg.pglaf.org/cache/epub/feeds/pg_catalog.csv \
-                     https://aleph.pglaf.org/cache/epub/feeds/pg_catalog.csv; do
-            if curl -fsSL --retry 5 --retry-all-errors -C - -o pg_catalog.csv "$src"; then echo "from $src"; break; fi
+          for src in https://gutenberg.pglaf.org/cache/epub/feeds/pg_catalog.csv \
+                     https://aleph.pglaf.org/cache/epub/feeds/pg_catalog.csv \
+                     https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv; do
+            if curl -fsSL --connect-timeout 20 --max-time 240 --retry 3 --retry-all-errors -C - -o pg_catalog.csv "$src"; then echo "from $src"; break; fi
             rm -f pg_catalog.csv
           done
           test -s pg_catalog.csv
